@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -90,11 +90,32 @@
             border-bottom: 2px dashed var(--border-select);
         }
         h1 {
-            font-size: 30px;
+            font-size: 28px;
             font-weight: 400;
-            letter-spacing: 6px;
+            letter-spacing: 4px;
             color: var(--text-primary);
             transition: color 0.3s;
+            white-space: nowrap;
+        }
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .lang-switch {
+            background: var(--bg-select);
+            border: 1px solid var(--border-select);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 14px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+        .lang-switch:hover {
+            background: var(--bg-select-group);
         }
         .theme-switch {
             position: relative;
@@ -261,15 +282,37 @@
             white-space: nowrap;
             transition: color 0.3s;
         }
+
+        /* 英文模式下的排版优化 */
+        html[data-lang="en"] .result-area {
+            white-space: normal;
+            overflow-x: hidden;
+            overflow-y: visible;
+            word-break: break-word;
+            padding: 20px 16px;
+        }
+        html[data-lang="en"] .result-text {
+            font-size: 20px;
+            letter-spacing: 0.5px;
+            white-space: normal;
+            line-height: 1.5;
+            width: 100%;
+        }
+
         @media (max-width: 480px) {
             .card { padding: 24px 14px 30px; }
-            h1 { font-size: 24px; letter-spacing: 4px; }
+            h1 { font-size: 20px; letter-spacing: 2px; }
+            .header-controls { gap: 8px; }
+            .lang-switch { padding: 4px 10px; font-size: 12px; }
             .date-picker-group input[type="date"] { font-size: 20px; padding: 8px 12px; }
             .btn-generate { font-size: 24px; letter-spacing: 6px; padding: 14px 8px; }
             .result-text { font-size: 28px; letter-spacing: 4px; }
             .result-placeholder { font-size: 18px; letter-spacing: 2px; }
             .result-area { padding: 18px 12px; min-height: 80px; }
             .theme-switch { transform: scale(0.85); }
+
+            /* 小屏幕英文模式 */
+            html[data-lang="en"] .result-text { font-size: 18px; letter-spacing: 0; }
         }
         @media (max-width: 400px) {
             .date-picker-group input[type="date"] { font-size: 18px; padding: 6px 10px; }
@@ -277,6 +320,9 @@
             .result-placeholder { font-size: 16px; letter-spacing: 1px; }
             .result-area { padding: 14px 10px; min-height: 70px; }
             .theme-switch { transform: scale(0.8); }
+
+            /* 更小屏幕英文模式 */
+            html[data-lang="en"] .result-text { font-size: 16px; }
         }
         @media (max-width: 360px) {
             .result-placeholder { font-size: 14px; letter-spacing: 0; }
@@ -286,14 +332,17 @@
 <body>
     <div class="card">
         <div class="header">
-            <h1>干支纪年生成器</h1>
-            <label class="theme-switch" for="themeToggle" aria-label="切换主题">
-                <input type="checkbox" id="themeToggle">
-                <div class="toggle-track">
-                    <div class="toggle-icon icon-sun">🌙</div>
-                    <div class="toggle-icon icon-moon">☀️</div>
-                </div>
-            </label>
+            <h1 id="titleText">干支纪年生成器</h1>
+            <div class="header-controls">
+                <button class="lang-switch" id="langToggle">English</button>
+                <label class="theme-switch" for="themeToggle" aria-label="切换主题">
+                    <input type="checkbox" id="themeToggle">
+                    <div class="toggle-track">
+                        <div class="toggle-icon icon-sun">🌙</div>
+                        <div class="toggle-icon icon-moon">☀️</div>
+                    </div>
+                </label>
+            </div>
         </div>
         <div class="date-picker-group">
             <input type="date" id="datePicker" min="0001-01-01" max="9999-12-31">
@@ -306,10 +355,41 @@
     </div>
     <script>
     (function() {
+        // 数据字典
+        const I18N = {
+            zh: {
+                title: "干支纪年生成器",
+                btn: "生成",
+                placeholder: "点击生成 · 干支",
+                invalidDate: "· 请选择有效日期 ·",
+                error: "· 计算错误，请重试 ·",
+                weekdays: ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'],
+                yearSuffix: "年",
+                monthSuffix: "月",
+                daySuffix: "日"
+            },
+            en: {
+                title: "Ganzhi Generator",
+                btn: "Generate",
+                placeholder: "Click Generate · Ganzhi",
+                invalidDate: "· Please select a valid date ·",
+                error: "· Calculation error, please retry ·",
+                weekdays: ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
+                yearSuffix: " Year",
+                monthSuffix: " Month",
+                daySuffix: " Day"
+            }
+        };
+
         const TIAN_GAN = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
         const DI_ZHI = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
         const SHENG_XIAO = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪'];
-        const WEEKDAYS = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+        
+        const TIAN_GAN_EN = ['Jia','Yi','Bing','Ding','Wu','Ji','Geng','Xin','Ren','Gui'];
+        const DI_ZHI_EN = ['Zi','Chou','Yin','Mao','Chen','Si','Wu','Wei','Shen','You','Xu','Hai'];
+        const SHENG_XIAO_EN = ['Rat','Ox','Tiger','Rabbit','Dragon','Snake','Horse','Goat','Monkey','Rooster','Dog','Pig'];
+
+        let currentLang = 'zh';
 
         const TERMS = [
             { name: '小寒', angle: 285, month: 1, day: 6 },
@@ -490,11 +570,13 @@
             };
         }
 
+        const titleText = document.getElementById('titleText');
         const datePicker = document.getElementById('datePicker');
         const generateBtn = document.getElementById('generateBtn');
         const resultText = document.getElementById('resultText');
         const resultPlaceholder = document.getElementById('resultPlaceholder');
         const themeToggle = document.getElementById('themeToggle');
+        const langToggle = document.getElementById('langToggle');
 
         function getDateFromPicker() {
             const val = datePicker.value;
@@ -514,13 +596,14 @@
 
         function updatePlaceholder() {
             const d = getDateFromPicker();
+            const t = I18N[currentLang];
             if (!d) {
-                resultPlaceholder.textContent = '· 请选择有效日期 ·';
+                resultPlaceholder.textContent = t.invalidDate;
                 return;
             }
             const { year, month, day } = d;
             const dateObj = createDate(year, month, day);
-            const weekday = WEEKDAYS[dateObj.getDay()];
+            const weekday = t.weekdays[dateObj.getDay()];
             const dateStr = year + '/' +
                            String(month).padStart(2, '0') + '/' +
                            String(day).padStart(2, '0') + ' ' + weekday;
@@ -528,11 +611,12 @@
         }
 
         function generateGanZhi() {
+            const t = I18N[currentLang];
             const d = getDateFromPicker();
             if (!d) {
                 resultText.style.display = 'none';
                 resultPlaceholder.style.display = 'block';
-                resultPlaceholder.textContent = '· 请选择有效日期 ·';
+                resultPlaceholder.textContent = t.invalidDate;
                 return;
             }
 
@@ -540,15 +624,22 @@
 
             try {
                 const yearInfo = getYearGanZhi(year, month, day);
-                const yearStr = yearInfo.gan + yearInfo.zhi + yearInfo.shengXiao + '年';
-
                 const monthInfo = getMonthGanZhi(year, month, day, yearInfo.ganIdx);
-                const monthStr = monthInfo.gan + monthInfo.zhi + '月';
-
                 const dayInfo = getDayGanZhi(year, month, day);
-                const dayStr = dayInfo.gan + dayInfo.zhi + '日';
 
-                const result = yearStr + ' ' + monthStr + ' ' + dayStr;
+                let result = '';
+                if (currentLang === 'zh') {
+                    const yearStr = yearInfo.gan + yearInfo.zhi + yearInfo.shengXiao + t.yearSuffix;
+                    const monthStr = monthInfo.gan + monthInfo.zhi + t.monthSuffix;
+                    const dayStr = dayInfo.gan + dayInfo.zhi + t.daySuffix;
+                    result = yearStr + ' ' + monthStr + ' ' + dayStr;
+                } else {
+                    const yearStr = TIAN_GAN_EN[yearInfo.ganIdx] + DI_ZHI_EN[yearInfo.zhiIdx] + ' ' + SHENG_XIAO_EN[yearInfo.zhiIdx] + t.yearSuffix;
+                    const monthStr = TIAN_GAN_EN[monthInfo.ganIdx] + DI_ZHI_EN[monthInfo.zhiIdx] + t.monthSuffix;
+                    const dayStr = TIAN_GAN_EN[dayInfo.ganIdx] + DI_ZHI_EN[dayInfo.zhiIdx] + t.daySuffix;
+                    result = yearStr + ', ' + monthStr + ', ' + dayStr;
+                }
+
                 resultText.textContent = result;
                 resultText.style.display = 'block';
                 resultPlaceholder.style.display = 'none';
@@ -556,7 +647,28 @@
                 console.error('计算错误:', error);
                 resultText.style.display = 'none';
                 resultPlaceholder.style.display = 'block';
-                resultPlaceholder.textContent = '· 计算错误，请重试 ·';
+                resultPlaceholder.textContent = t.error;
+            }
+        }
+
+        function updateStaticText() {
+            const t = I18N[currentLang];
+            // 更新 html 的 data-lang 属性，用于精准控制不同语言下的 CSS 样式
+            document.documentElement.setAttribute('data-lang', currentLang);
+            
+            document.title = t.title;
+            titleText.textContent = t.title;
+            generateBtn.textContent = t.btn;
+            
+            // 按钮显示另一种语言的名字
+            langToggle.textContent = currentLang === 'zh' ? 'English' : '中文';
+            
+            // 如果当前结果没出来，更新占位符
+            if (resultText.style.display === 'none') {
+                updatePlaceholder();
+            } else {
+                // 如果结果已经出来了，需要根据新语言重新计算生成一遍
+                generateGanZhi();
             }
         }
 
@@ -568,7 +680,13 @@
             resultPlaceholder.style.display = 'block';
         });
 
+        langToggle.addEventListener('click', function() {
+            currentLang = currentLang === 'zh' ? 'en' : 'zh';
+            updateStaticText();
+        });
+
         function initDefault() {
+            document.documentElement.setAttribute('data-lang', currentLang);
             const today = new Date();
             const year = today.getFullYear();
             const month = String(today.getMonth() + 1).padStart(2, '0');
