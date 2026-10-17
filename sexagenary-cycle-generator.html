@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>干支纪年生成器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Noto Sans SC', sans-serif !important;
+        }
+        :root {
+            --bg-body: #ede7df;
+            --bg-card: #fcf8f2;
+            --border-card: #ddd0c0;
+            --text-primary: #3d2c1b;
+            --text-secondary: #2d1f12;
+            --bg-select-group: #f3ece2;
+            --border-select: #d5c6b4;
+            --bg-select: #fffcf7;
+            --border-select-focus: #8f735b;
+            --shadow-btn: 0 6px 0 #4f3721, 0 8px 20px rgba(80, 50, 30, 0.18);
+            --bg-btn: #6d4c2e;
+            --text-btn: #fcf6ed;
+            --border-btn: #8b6a4a;
+            --bg-result: #efe6da;
+            --border-result: #d5c6b4;
+            --text-result: #2d1f12;
+            --text-placeholder: #9b8672;
+            --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.10), 0 6px 16px rgba(0, 0, 0, 0.05);
+            --toggle-bg: #efe6da;
+            --toggle-border: #d5c6b4;
+            --toggle-icon-on: #f39c12;
+            --toggle-icon-off: #bdc3c7;
+            --toggle-knob: #ffffff;
+        }
+        [data-theme="dark"] {
+            --bg-body: #1a1714;
+            --bg-card: #2c2520;
+            --border-card: #4a3f37;
+            --text-primary: #e8ddd0;
+            --text-secondary: #f0e6db;
+            --bg-select-group: #3a322b;
+            --border-select: #5a4f45;
+            --bg-select: #3d352e;
+            --border-select-focus: #b1977e;
+            --shadow-btn: 0 6px 0 #2f2218, 0 8px 20px rgba(0, 0, 0, 0.4);
+            --bg-btn: #5a3f2b;
+            --text-btn: #f0e6db;
+            --border-btn: #7a5f47;
+            --bg-result: #3a322b;
+            --border-result: #5a4f45;
+            --text-result: #f0e6db;
+            --text-placeholder: #a89580;
+            --shadow-card: 0 20px 40px rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.3);
+            --toggle-bg: #3a322b;
+            --toggle-border: #5a4f45;
+            --toggle-icon-on: #a89580;
+            --toggle-icon-off: #f1c40f;
+            --toggle-knob: #f0e6db;
+        }
+        body {
+            background: var(--bg-body);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            transition: background 0.3s;
+            -webkit-font-smoothing: antialiased;
+        }
+        .card {
+            background: var(--bg-card);
+            max-width: 620px;
+            width: 100%;
+            border-radius: 48px 48px 40px 40px;
+            padding: 36px 28px 42px;
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--border-card);
+            transition: background 0.3s, border 0.3s, box-shadow 0.3s;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 14px;
+            border-bottom: 2px dashed var(--border-select);
+        }
+        h1 {
+            font-size: 30px;
+            font-weight: 400;
+            letter-spacing: 6px;
+            color: var(--text-primary);
+            transition: color 0.3s;
+        }
+        .theme-switch {
+            position: relative;
+            display: inline-block;
+            width: 72px;
+            height: 32px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .theme-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-track {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--toggle-bg);
+            border: 1px solid var(--toggle-border);
+            border-radius: 34px;
+            transition: .4s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 6px;
+        }
+        .toggle-track:before {
+            content: "";
+            position: absolute;
+            height: 24px;
+            width: 24px;
+            left: 4px;
+            bottom: 3px;
+            background-color: var(--toggle-knob);
+            border-radius: 50%;
+            transition: .4s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            z-index: 2;
+        }
+        .theme-switch input:checked + .toggle-track:before {
+            transform: translateX(38px);
+        }
+        .toggle-icon {
+            z-index: 1;
+            font-size: 16px;
+            line-height: 1;
+            transition: opacity 0.3s;
+        }
+        .icon-sun {
+            color: var(--toggle-icon-on);
+        }
+        .icon-moon {
+            color: var(--toggle-icon-off);
+        }
+        [data-theme="dark"] .icon-sun { opacity: 0.4; }
+        [data-theme="dark"] .icon-moon { opacity: 1; }
+        [data-theme="light"] .icon-sun { opacity: 1; }
+        [data-theme="light"] .icon-moon { opacity: 0.4; }
+        .date-picker-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-select-group);
+            padding: 12px 18px;
+            border-radius: 64px;
+            border: 1px solid var(--border-select);
+            margin-bottom: 34px;
+            transition: background 0.3s, border 0.3s;
+        }
+        .date-picker-group input[type="date"] {
+            flex: 1;
+            min-width: 0;
+            background-color: var(--bg-select);
+            border: 1px solid var(--border-select);
+            border-radius: 40px;
+            padding: 10px 16px;
+            font-size: 22px;
+            color: var(--text-secondary);
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.15s;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+            -webkit-appearance: none;
+            appearance: none;
+            outline: none;
+            width: 100%;
+            text-align: center;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%239b8672' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 18px;
+            padding-right: 40px;
+        }
+        .date-picker-group input[type="date"]:focus {
+            outline: 2px solid var(--border-select-focus);
+            border-color: var(--border-select-focus);
+            background-color: var(--bg-select);
+        }
+        [data-theme="dark"] .date-picker-group input[type="date"] {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23a89580' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E");
+        }
+        .btn-generate {
+            width: 100%;
+            background: var(--bg-btn);
+            border: none;
+            border-radius: 60px;
+            padding: 18px 12px;
+            font-size: 28px;
+            color: var(--text-btn);
+            letter-spacing: 10px;
+            cursor: pointer;
+            transition: all 0.15s;
+            box-shadow: var(--shadow-btn);
+            border: 1px solid var(--border-btn);
+            margin-bottom: 28px;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        .btn-generate:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 #4f3721, 0 8px 16px rgba(80, 50, 30, 0.12);
+        }
+        .btn-generate:hover {
+            background: #7d5737;
+        }
+        [data-theme="dark"] .btn-generate:hover {
+            background: #6d4f38;
+        }
+        .result-area {
+            background: var(--bg-result);
+            border-radius: 60px;
+            padding: 22px 18px;
+            text-align: center;
+            border: 1px solid var(--border-result);
+            min-height: 96px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            word-break: keep-all;
+            white-space: nowrap;
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+        .result-text {
+            font-size: 34px;
+            letter-spacing: 6px;
+            color: var(--text-result);
+            line-height: 1.3;
+            font-weight: 400;
+            white-space: nowrap;
+            transition: color 0.3s;
+        }
+        .result-placeholder {
+            color: var(--text-placeholder);
+            font-size: 22px;
+            letter-spacing: 3px;
+            opacity: 0.6;
+            white-space: nowrap;
+            transition: color 0.3s;
+        }
+        @media (max-width: 480px) {
+            .card { padding: 24px 14px 30px; }
+            h1 { font-size: 24px; letter-spacing: 4px; }
+            .date-picker-group input[type="date"] { font-size: 20px; padding: 8px 12px; }
+            .btn-generate { font-size: 24px; letter-spacing: 6px; padding: 14px 8px; }
+            .result-text { font-size: 28px; letter-spacing: 4px; }
+            .result-placeholder { font-size: 18px; letter-spacing: 2px; }
+            .result-area { padding: 18px 12px; min-height: 80px; }
+            .theme-switch { transform: scale(0.85); }
+        }
+        @media (max-width: 400px) {
+            .date-picker-group input[type="date"] { font-size: 18px; padding: 6px 10px; }
+            .result-text { font-size: 24px; letter-spacing: 3px; }
+            .result-placeholder { font-size: 16px; letter-spacing: 1px; }
+            .result-area { padding: 14px 10px; min-height: 70px; }
+            .theme-switch { transform: scale(0.8); }
+        }
+        @media (max-width: 360px) {
+            .result-placeholder { font-size: 14px; letter-spacing: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="header">
+            <h1>干支纪年生成器</h1>
+            <label class="theme-switch" for="themeToggle" aria-label="切换主题">
+                <input type="checkbox" id="themeToggle">
+                <div class="toggle-track">
+                    <div class="toggle-icon icon-sun">🌙</div>
+                    <div class="toggle-icon icon-moon">☀️</div>
+                </div>
+            </label>
+        </div>
+        <div class="date-picker-group">
+            <input type="date" id="datePicker" min="0001-01-01" max="9999-12-31">
+        </div>
+        <button class="btn-generate" id="generateBtn">生成</button>
+        <div class="result-area" id="resultArea">
+            <span class="result-placeholder" id="resultPlaceholder">点击生成 · 干支</span>
+            <span class="result-text" id="resultText" style="display: none;"></span>
+        </div>
+    </div>
+    <script>
+    (function() {
+        const TIAN_GAN = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+        const DI_ZHI = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+        const SHENG_XIAO = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪'];
+        const WEEKDAYS = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+
+        const TERMS = [
+            { name: '小寒', angle: 285, month: 1, day: 6 },
+            { name: '立春', angle: 315, month: 2, day: 4 },
+            { name: '惊蛰', angle: 345, month: 3, day: 6 },
+            { name: '清明', angle: 15,  month: 4, day: 5 },
+            { name: '立夏', angle: 45,  month: 5, day: 6 },
+            { name: '芒种', angle: 75,  month: 6, day: 6 },
+            { name: '小暑', angle: 105, month: 7, day: 7 },
+            { name: '立秋', angle: 135, month: 8, day: 8 },
+            { name: '白露', angle: 165, month: 9, day: 8 },
+            { name: '寒露', angle: 195, month: 10, day: 8 },
+            { name: '立冬', angle: 225, month: 11, day: 7 },
+            { name: '大雪', angle: 255, month: 12, day: 7 }
+        ];
+
+        const TERM_MONTH_ZHI = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0];
+
+        function degToRad(deg) { return deg * Math.PI / 180; }
+
+        function normalizeDeg(deg) {
+            deg = deg % 360;
+            if (deg < 0) deg += 360;
+            return deg;
+        }
+
+        function angleDiff(deg) {
+            deg = deg % 360;
+            if (deg > 180) deg -= 360;
+            if (deg < -180) deg += 360;
+            return deg;
+        }
+
+        function jdToDate(jd) {
+            const unixMs = (jd - 2440587.5) * 86400000;
+            return new Date(unixMs);
+        }
+
+        function dateToJD(date) {
+            return date.getTime() / 86400000 + 2440587.5;
+        }
+
+        function createDate(year, month, day) {
+            const d = new Date(0);
+            d.setFullYear(year, month - 1, day);
+            d.setHours(0, 0, 0, 0);
+            return d;
+        }
+
+        function sunApparentLongitude(jd) {
+            const T = (jd - 2451545.0) / 36525.0;
+            const L0 = 280.46646 + 36000.76983 * T + 0.0003032 * T * T;
+            const M = 357.52911 + 35999.05029 * T - 0.0001537 * T * T;
+            const M_rad = degToRad(M);
+            const C = (1.914602 - 0.004817 * T - 0.000014 * T * T) * Math.sin(M_rad)
+                    + (0.019993 - 0.000101 * T) * Math.sin(2 * M_rad)
+                    + 0.000289 * Math.sin(3 * M_rad);
+            let trueLong = L0 + C;
+            trueLong -= 0.00569;
+            const omega = 125.04 - 1934.136 * T;
+            const nutation = -0.00478 * Math.sin(degToRad(omega));
+            trueLong += nutation;
+            return normalizeDeg(trueLong);
+        }
+
+        function computeTermDate(year, angle, approxMonth, approxDay) {
+            const startDate = createDate(year, approxMonth, approxDay - 5);
+            const endDate = createDate(year, approxMonth, approxDay + 5);
+            let low = dateToJD(startDate);
+            let high = dateToJD(endDate);
+
+            let lowLng = sunApparentLongitude(low);
+            let highLng = sunApparentLongitude(high);
+            let lowDiff = angleDiff(lowLng - angle);
+            let highDiff = angleDiff(highLng - angle);
+
+            if (lowDiff > 0 || highDiff < 0) {
+                low = dateToJD(createDate(year, approxMonth, approxDay - 15));
+                high = dateToJD(createDate(year, approxMonth, approxDay + 15));
+                lowLng = sunApparentLongitude(low);
+                highLng = sunApparentLongitude(high);
+                lowDiff = angleDiff(lowLng - angle);
+                highDiff = angleDiff(highLng - angle);
+            }
+
+            for (let i = 0; i < 50; i++) {
+                const mid = (low + high) / 2;
+                const midLng = sunApparentLongitude(mid);
+                const midDiff = angleDiff(midLng - angle);
+                if (midDiff < 0) {
+                    low = mid;
+                } else {
+                    high = mid;
+                }
+            }
+
+            const jdResult = (low + high) / 2;
+            return jdToDate(jdResult);
+        }
+
+        function getSolarTerms(year) {
+            return TERMS.map(term => {
+                const date = computeTermDate(year, term.angle, term.month, term.day);
+                return { name: term.name, date: date, zhiIndex: TERM_MONTH_ZHI[TERMS.indexOf(term)] };
+            });
+        }
+
+        function getDayGanZhi(year, month, day) {
+            const target = createDate(year, month, day);
+            const base = createDate(2000, 1, 1);
+            const diff = Math.floor((target - base) / 86400000);
+            const ganIdx = ((diff + 4) % 10 + 10) % 10;
+            const zhiIdx = ((diff + 6) % 12 + 12) % 12;
+            return { gan: TIAN_GAN[ganIdx], zhi: DI_ZHI[zhiIdx], ganIdx, zhiIdx };
+        }
+
+        function getYearGanZhi(year, month, day) {
+            const inputDate = createDate(year, month, day);
+            inputDate.setHours(23, 59, 59, 999);
+            const lichunDate = computeTermDate(year, 315, 2, 4);
+            let targetYear = year;
+            if (inputDate < lichunDate) {
+                targetYear = year - 1;
+            }
+            const offset = targetYear - 1984;
+            const ganIdx = ((offset % 10) + 10) % 10;
+            const zhiIdx = ((offset % 12) + 12) % 12;
+            return {
+                gan: TIAN_GAN[ganIdx],
+                zhi: DI_ZHI[zhiIdx],
+                shengXiao: SHENG_XIAO[zhiIdx],
+                ganIdx,
+                zhiIdx
+            };
+        }
+
+        function getMonthGanZhi(year, month, day, yearGanIdx) {
+            const inputDate = createDate(year, month, day);
+            inputDate.setHours(23, 59, 59, 999);
+            const prevYearTerms = getSolarTerms(year - 1);
+            const currYearTerms = getSolarTerms(year);
+            const nextYearTerms = getSolarTerms(year + 1);
+
+            const allTerms = [];
+            const prevDaXue = prevYearTerms.find(t => t.name === '大雪');
+            if (prevDaXue) allTerms.push(prevDaXue);
+            currYearTerms.forEach(t => allTerms.push(t));
+            const nextXiaoHan = nextYearTerms.find(t => t.name === '小寒');
+            if (nextXiaoHan) allTerms.push(nextXiaoHan);
+
+            allTerms.sort((a, b) => a.date - b.date);
+
+            let selectedTerm = null;
+            for (const term of allTerms) {
+                if (term.date <= inputDate) {
+                    selectedTerm = term;
+                } else {
+                    break;
+                }
+            }
+
+            if (!selectedTerm) {
+                selectedTerm = { zhiIndex: 2 };
+            }
+
+            const monthZhiIndex = selectedTerm.zhiIndex;
+
+            const yinGanStart = (Math.floor(yearGanIdx % 5) * 2 + 2) % 10;
+
+            let monthGanIdx = (yinGanStart + (monthZhiIndex - 2)) % 10;
+            if (monthGanIdx < 0) monthGanIdx += 10;
+
+            return {
+                gan: TIAN_GAN[monthGanIdx],
+                zhi: DI_ZHI[monthZhiIndex],
+                ganIdx: monthGanIdx,
+                zhiIdx: monthZhiIndex
+            };
+        }
+
+        const datePicker = document.getElementById('datePicker');
+        const generateBtn = document.getElementById('generateBtn');
+        const resultText = document.getElementById('resultText');
+        const resultPlaceholder = document.getElementById('resultPlaceholder');
+        const themeToggle = document.getElementById('themeToggle');
+
+        function getDateFromPicker() {
+            const val = datePicker.value;
+            if (!val) return null;
+            const parts = val.split('-');
+            if (parts.length !== 3) return null;
+            const year = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10);
+            const day = parseInt(parts[2], 10);
+            if (isNaN(year) || isNaN(month) || isNaN(day)) return null;
+            const testDate = createDate(year, month, day);
+            if (testDate.getFullYear() !== year || testDate.getMonth() !== month - 1 || testDate.getDate() !== day) {
+                return null;
+            }
+            return { year, month, day };
+        }
+
+        function updatePlaceholder() {
+            const d = getDateFromPicker();
+            if (!d) {
+                resultPlaceholder.textContent = '· 请选择有效日期 ·';
+                return;
+            }
+            const { year, month, day } = d;
+            const dateObj = createDate(year, month, day);
+            const weekday = WEEKDAYS[dateObj.getDay()];
+            const dateStr = year + '/' +
+                           String(month).padStart(2, '0') + '/' +
+                           String(day).padStart(2, '0') + ' ' + weekday;
+            resultPlaceholder.textContent = '· ' + dateStr + ' ·';
+        }
+
+        function generateGanZhi() {
+            const d = getDateFromPicker();
+            if (!d) {
+                resultText.style.display = 'none';
+                resultPlaceholder.style.display = 'block';
+                resultPlaceholder.textContent = '· 请选择有效日期 ·';
+                return;
+            }
+
+            const { year, month, day } = d;
+
+            try {
+                const yearInfo = getYearGanZhi(year, month, day);
+                const yearStr = yearInfo.gan + yearInfo.zhi + yearInfo.shengXiao + '年';
+
+                const monthInfo = getMonthGanZhi(year, month, day, yearInfo.ganIdx);
+                const monthStr = monthInfo.gan + monthInfo.zhi + '月';
+
+                const dayInfo = getDayGanZhi(year, month, day);
+                const dayStr = dayInfo.gan + dayInfo.zhi + '日';
+
+                const result = yearStr + ' ' + monthStr + ' ' + dayStr;
+                resultText.textContent = result;
+                resultText.style.display = 'block';
+                resultPlaceholder.style.display = 'none';
+            } catch (error) {
+                console.error('计算错误:', error);
+                resultText.style.display = 'none';
+                resultPlaceholder.style.display = 'block';
+                resultPlaceholder.textContent = '· 计算错误，请重试 ·';
+            }
+        }
+
+        generateBtn.addEventListener('click', generateGanZhi);
+
+        datePicker.addEventListener('change', function() {
+            updatePlaceholder();
+            resultText.style.display = 'none';
+            resultPlaceholder.style.display = 'block';
+        });
+
+        function initDefault() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            datePicker.value = year + '-' + month + '-' + day;
+            updatePlaceholder();
+            resultText.style.display = 'none';
+            resultPlaceholder.style.display = 'block';
+        }
+        initDefault();
+
+        let userToggledTheme = false;
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            themeToggle.checked = (theme === 'dark');
+        }
+
+        if (prefersDark.matches) {
+            setTheme('dark');
+        } else {
+            setTheme('light');
+        }
+
+        themeToggle.addEventListener('change', function() {
+            userToggledTheme = true;
+            setTheme(this.checked ? 'dark' : 'light');
+        });
+
+        prefersDark.addEventListener('change', function(e) {
+            if (!userToggledTheme) {
+                setTheme(e.matches ? 'dark' : 'light');
+            }
+        });
+    })();
+    </script>
+</body>
+</html>
