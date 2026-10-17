@@ -512,40 +512,12 @@ Issues and PRs are welcome. Suggested directions:
 · Add unit tests (solar term, day pillar, month pillar boundary cases)
 · Add more color themes
 
+
 提交 PR 前请确保：
 单文件可独立运行、无新增第三方依赖、明暗主题与移动端表现正常。
 
 Before submitting a PR, please ensure:
 The single file runs independently, no new third-party dependencies are added, and light/dark themes and mobile behavior work correctly.
-
----
-
-License
-
-<div align="center">
-
-https://img.shields.io/badge/License-MIT-2ea44f?style=for-the-badge&logo=opensourceinitiative&logoColor=white
-
-MIT License © 2025 <你的名字 / Your Name>
-
-详见仓库根目录 LICENSE 文件。
-
-See the LICENSE file in the repository root for details.
-
-</div>
-
----
-
-参考资料 / References
-
-· 干支与六十甲子：中国传统历法基础概念
-· 太阳视黄经与节气：Jean Meeus, 《Astronomical Algorithms》
-· 儒略日与日期换算：JD ↔ Unix 时间戳标准换算
-· 五虎遁月法：年干推月干传统口诀
-· Ganzhi and the Sexagenary Cycle: basic concepts of traditional Chinese calendrics
-· Solar apparent longitude and solar terms: Jean Meeus, Astronomical Algorithms
-· Julian Day and date conversion: standard JD ↔ Unix timestamp conversion
-· Five Tigers Escaping month rule: traditional mnemonic for deriving month stems from the year stem
 
 ---
 
